@@ -102,6 +102,10 @@ textarea::placeholder{color:#5c5c64}
 .err{max-width:1080px;margin:18px auto 0;text-align:center;color:#ff7a86;font-size:15px;min-height:22px}
 @media(max-width:860px){.grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.banner{flex-direction:column;text-align:center}.tag{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+select.ghost{appearance:none;-webkit-appearance:none;text-align:center;cursor:pointer}
+.dbg{margin-top:24px;color:var(--mute)}.dbg summary{cursor:pointer;font-weight:600;font-size:14px}
+.dl{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-family:var(--bn);font-size:14px;word-break:break-word}
+.dl b{min-width:70px;font-family:var(--font)}.dl.m b{color:var(--ok)}.dl.u b{color:var(--warn)}
 </style>
 </head>
 <body>
@@ -146,6 +150,7 @@ textarea::placeholder{color:#5c5c64}
 
 <div class="act">
   <button class="go" id="go">Match Questions</button>
+  <select class="ghost" id="strict" aria-label="Matching strictness"><option value="0.95">Strict</option><option value="0.9" selected>Normal</option><option value="0.82">Loose</option></select>
   <button class="ghost" id="reset">Reset all</button>
 </div>
 <p class="err" id="err" role="alert"></p>
@@ -163,6 +168,7 @@ function parseSheet(t){
     .filter(Boolean);
 }
 const HEAD = /^(প্রশ্ন|question|q)\s*[:.\-]?\s*[\d০-৯]+\s*[.:)]?$/i;
+// Dashboard: protita "প্রশ্ন N" er niche jotogulo line, shob ekta block e rakhi (option koyta line e ashe seta guess kori na)
 function parseDash(t){
   const lines = t.split(/\r?\n/).map(l => l.trim());
   const out = []; let cur = null;
@@ -170,61 +176,86 @@ function parseDash(t){
     if (HEAD.test(l)) { cur = []; out.push(cur); continue; }
     if (l && cur) cur.push(l);
   }
-  if (!out.length) return lines.filter(Boolean);          // header chhara paste korle
-  return out.filter(b => b.length).map(b => b.length >= 5 ? b.slice(0, -4).join(' ') : b[0]);
+  if (!out.length) return lines.filter(Boolean).map(l => [l]);   // header chhara paste korle
+  return out.filter(b => b.length);
 }
 
 /* ---------- Normalizing (KaTeX / LaTeX / Unicode math) ---------- */
+const GREEK = {alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',eta:'η',theta:'θ',lambda:'λ',mu:'μ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',phi:'φ',omega:'ω',Delta:'Δ',Omega:'Ω',Sigma:'Σ',Theta:'Θ',Phi:'Φ',Pi:'Π'};
+const FUNC = /\\(sin|cos|tan|cot|sec|csc|sinh|cosh|tanh|arcsin|arccos|arctan|log|ln|lim|exp|min|max|det)\b/g;
 function collapseDup(s){
   // KaTeX copy e formula duibar ashe: "CH3ICH3I" -> "CH3I"
-  return s.replace(/[A-Za-z0-9=+\-−()\[\].,→^_πσ]{4,}/g, r => {
+  return s.replace(/[A-Za-z0-9=+\-()\[\].,→^_πσ]{4,}/g, r => {
     if (r.length % 2 || !/[A-Za-z]/.test(r)) return r;
     const h = r.length / 2;
     return r.slice(0, h).toLowerCase() === r.slice(h).toLowerCase() ? r.slice(0, h) : r;
   });
 }
 function clean(s, dash){
-  s = s.normalize('NFKC').replace(/[⟶⟹⇒➔→]/g, '→').replace(/[−–—]/g, '-');
+  s = s.normalize('NFKC').replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+  s = s.replace(/[⟶⟹⇒➔]/g, '→').replace(/[−–—]/g, '-');
   s = s.replace(/\[\[|\]\]|\$\$|\$/g, ' ')
-       .replace(/\\(text|mathrm|mathbf|left|right|,|;|!)/g, '')
-       .replace(/\\[a-zA-Z]+/g, '');
+       .replace(/\\(text|mathrm|mathbf|mathit|left|right|operatorname)\b/g, '')
+       .replace(FUNC, '$1')
+       .replace(/\\([a-zA-Z]+)/g, (m, n) => GREEK[n] || '')
+       .replace(/\\[,;:! ]/g, ' ');
   if (dash) s = collapseDup(s);
   return s;
 }
 const key = s => s.toLowerCase().replace(/[^\p{L}\p{N}\p{M}]/gu, '');
 const nums = s => new Set(s.match(/\d+(\.\d+)?/g) || []);
 function grams(s){ const m = new Map(); for (let i = 0; i < s.length - 1; i++){ const g = s.substr(i, 2); m.set(g, (m.get(g) || 0) + 1); } return m; }
-function dice(a, b){
-  if (a === b) return 1;
-  if (a.length < 2 || b.length < 2) return 0;
-  const A = grams(a), B = grams(b); let hit = 0;
-  for (const [g, n] of A) hit += Math.min(n, B.get(g) || 0);
-  return 2 * hit / ((a.length - 1) + (b.length - 1));
-}
 const same = (x, y) => x.size === y.size && [...x].every(v => y.has(v));
+const prep = text => { const c = clean(text.text, text.dash), k = key(c); return {k, n:nums(c), g:grams(k)}; };
 
 /* ---------- Matching ---------- */
-const THRESH = 0.88;
-function match(sheet, dash){
-  const S = sheet.map(q => { const c = clean(q, false); return {raw:q, k:key(c), n:nums(c)}; });
-  const D = dash.map(q => { const c = clean(q, true);  return {raw:q, k:key(c), n:nums(c)}; });
-  const pairs = [];
-  S.forEach((s, i) => D.forEach((d, j) => {
-    let sc = dice(s.k, d.k);
-    if (!same(s.n, d.n)) sc = Math.min(sc, 0.75);          // number alada hole match noy
-    pairs.push([sc, i, j]);
+// KaTeX paste e formula toto tukra tukra line e bhenge jay ("(" , "0" , "," ...). Tai line count er upor nirbhor kori na.
+// Dashboard er block ke ekta lomba akkhor-stream hishebe dhori ar tar shuru theke "question er soman" ongsho ta khuje bar kori.
+const prev = lines => lines.join(' ').replace(/\s+/g, ' ').slice(0, 150);
+function match(sheet, blocks, th){
+  th = th || 0.9;
+  const S = sheet.map(q => { const c = clean(q, false), k = key(c); return {raw:q, k, n:nums(c), g:grams(k)}; });
+  const D = blocks.map(lines => {
+    const kc = [], ct = []; let k = '', t = '';
+    lines.forEach(l => { const c = clean(l, false); k += key(c); t += c; kc.push(k); ct.push(t); });
+    const cache = new Map();
+    return {lines, kc, cand(i){ if (!cache.has(i)) cache.set(i, {k:kc[i], n:nums(ct[i]), g:grams(kc[i])}); return cache.get(i); }};
+  });
+  const score = (s, c) => {
+    if (!s.k || !c.k) return 0;
+    if (s.k === c.k) return same(s.n, c.n) ? 1 : 0.7;
+    if (s.k.length < 2) return 0;
+    let hit = 0; for (const [g, n] of s.g) hit += Math.min(n, c.g.get(g) || 0);
+    const cov = hit / (s.k.length - 1), r = c.k.length / s.k.length;
+    let v = cov * (r > 2.6 ? 2.6 / r : 1);                 // KaTeX double text er jonno 2.6x porjonto ok
+    if (!same(s.n, c.n)) v = Math.min(v, 0.7);             // number alada hole match noy
+    return v;
+  };
+  const M = S.map(s => D.map(d => {
+    const lo = 0.85 * s.k.length, hi = 2.6 * s.k.length;
+    let f = d.kc.findIndex(k => k.length >= lo); if (f < 0) f = d.kc.length - 1;
+    let best = 0;
+    for (let i = f; i < d.kc.length; i++){
+      if (i > f && d.kc[i].length > hi) break;
+      best = Math.max(best, score(s, d.cand(i)));
+      if (best >= 1) break;
+    }
+    return best;
   }));
+  const pairs = [];
+  S.forEach((_, i) => D.forEach((_, j) => pairs.push([M[i][j], i, j])));
   pairs.sort((x, y) => y[0] - x[0]);
   const sm = Array(S.length).fill(-1), dm = Array(D.length).fill(-1);
-  for (const [sc, i, j] of pairs) if (sc >= THRESH && sm[i] < 0 && dm[j] < 0){ sm[i] = j; dm[j] = i; }
+  for (const [sc, i, j] of pairs) if (sc >= th && sm[i] < 0 && dm[j] < 0){ sm[i] = j; dm[j] = i; }
   const missing = [], extra = [];
   S.forEach((s, i) => { if (sm[i] < 0){
-    let best = [0, -1]; D.forEach((d, j) => { if (dm[j] < 0){ const sc = pairs.find(p => p[1] === i && p[2] === j)[0]; if (sc > best[0]) best = [sc, j]; } });
+    let best = [0, -1]; D.forEach((_, j) => { if (dm[j] < 0 && M[i][j] > best[0]) best = [M[i][j], j]; });
     missing.push({i, text:s.raw, close: best[0] >= 0.55 ? best : null});
   }});
-  D.forEach((d, j) => { if (dm[j] < 0) extra.push({j, text:d.raw}); });
+  D.forEach((d, j) => { if (dm[j] < 0) extra.push({j, text:prev(d.lines)}); });
   const moved = sm.filter((j, i) => j >= 0 && j !== i).length;
-  return {total:S.length, dtotal:D.length, ok:sm.filter(j => j >= 0).length, missing, extra, moved, dash:D};
+  return {total:S.length, dtotal:D.length, ok:sm.filter(j => j >= 0).length, missing, extra, moved,
+          read:D.map((d, j) => ({j, text:prev(d.lines), ok:dm[j] >= 0}))};
 }
 
 /* ---------- UI ---------- */
@@ -251,7 +282,7 @@ $('#go').onclick = () => {
   const btn = $('#go'); btn.classList.add('load'); btn.textContent = 'Matching...';
   $('#s2').classList.add('on'); $('#s2').classList.remove('done');
   setTimeout(() => {
-    const r = match(x, y);
+    const r = match(x, y, +$('#strict').value);
     btn.classList.remove('load'); btn.textContent = 'Match Questions';
     ['s1','s2'].forEach(i => { $('#' + i).classList.add('done'); $('#' + i).classList.remove('on'); });
     $('#s3').classList.add('on');
@@ -287,6 +318,8 @@ function render(r){
     }
     if (r.moved) h += `<p class="note">${r.moved}ta matched question er serial Sheet ar Dashboard e alada.</p>`;
   }
+  h += `<details class="dbg"><summary>Tool dashboard er question gulo kivabe porechhe</summary>` +
+    r.read.map(d => `<div class="dl ${d.ok ? 'm' : 'u'}"><b>Dash ${d.j + 1}</b><span>${esc(d.text)}</span></div>`).join('') + '</details>';
   $('#res').innerHTML = h + '</div>';
 }
 </script>
