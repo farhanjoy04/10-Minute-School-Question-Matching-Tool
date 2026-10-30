@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Question Matcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050505;--card:#111112;--card2:#171719;--line:#2a2a2e;--text:#f4f4f5;--mute:#9a9aa3;
+  --red:#ff2438;--crim:#d6004f;--ok:#22d97a;--warn:#ffb020;
+  --font:'Inter','Hind Siliguri',system-ui,sans-serif;--bn:'Hind Siliguri','Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{font-family:var(--font);color:var(--text);min-height:100vh;
+  background:radial-gradient(900px 420px at 50% -80px,rgba(255,36,56,.28),transparent 70%),
+             radial-gradient(600px 300px at 90% 30%,rgba(214,0,79,.10),transparent 70%),var(--bg);
+  padding:16px 16px 80px;overflow-x:hidden}
+.nav{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 10px 20px;border:1px solid var(--line);border-radius:999px;background:rgba(17,17,18,.7);backdrop-filter:blur(10px)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--red),var(--crim));display:grid;place-items:center;box-shadow:0 0 18px rgba(255,36,56,.5)}
+.mark svg{width:16px;height:16px}
+.tag{font-size:13px;color:var(--mute);padding:7px 14px;border-radius:999px;background:#1a1a1d;display:flex;align-items:center;gap:8px}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.hero{text-align:center;max-width:820px;margin:64px auto 44px}
+.eyebrow{color:var(--red);font-weight:600;font-size:15px;margin-bottom:14px}
+h1{font-size:clamp(40px,8vw,84px);font-weight:900;letter-spacing:-.045em;line-height:1}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--red),var(--crim));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mute);margin-top:22px;font-size:17px;line-height:1.7}
+.sub code{font-family:var(--bn);background:rgba(255,36,56,.1);color:#ff7a86;border:1px solid rgba(255,36,56,.3);padding:2px 9px;border-radius:7px;font-size:15px}
+.steps{max-width:1080px;margin:0 auto 26px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{display:flex;gap:14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:20px;background:var(--card);transition:.35s}
+.step b{width:42px;height:42px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:20px;background:#232327;color:var(--mute);transition:.35s}
+.step small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.step.on{border-color:rgba(255,36,56,.6);background:linear-gradient(180deg,rgba(255,36,56,.14),var(--card))}
+.step.on b{background:linear-gradient(135deg,var(--red),var(--crim));color:#fff;box-shadow:0 0 22px rgba(255,36,56,.55)}
+.step.done b{background:var(--ok);color:#052914}
+.grid{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.box{border:1.5px dashed #3a3a40;border-radius:26px;background:var(--card);padding:18px;transition:border-color .3s,box-shadow .3s}
+.box:focus-within{border-color:var(--red);box-shadow:0 0 0 4px rgba(255,36,56,.12),0 10px 50px rgba(255,36,56,.12)}
+.bh{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ic{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--red),var(--crim));display:grid;place-items:center;box-shadow:0 8px 24px rgba(255,36,56,.35)}
+.ic svg{width:22px;height:22px}
+.bh h2{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.bh p{font-size:12.5px;color:var(--mute)}
+.pill{margin-left:auto;font-size:13px;font-weight:700;color:#ff7a86;background:rgba(255,36,56,.12);padding:5px 12px;border-radius:999px;transition:transform .25s}
+.pill.bump{transform:scale(1.18)}
+textarea{width:100%;height:340px;resize:vertical;background:#0a0a0b;border:1px solid var(--line);border-radius:16px;color:var(--text);
+  font-family:var(--bn);font-size:15px;line-height:1.65;padding:14px 16px;outline:none;transition:border-color .25s}
+textarea:focus{border-color:#4a4a52}
+textarea::placeholder{color:#5c5c64}
+.bf{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--mute)}
+.lnk{background:none;border:0;color:var(--mute);font:inherit;cursor:pointer;transition:color .2s}
+.lnk:hover,.lnk:focus-visible{color:var(--red);outline:none}
+.act{max-width:1080px;margin:28px auto 0;display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.go{position:relative;font:800 18px var(--font);color:#fff;border:0;cursor:pointer;padding:18px 46px;border-radius:999px;
+  background:linear-gradient(90deg,var(--red),var(--crim));box-shadow:0 12px 40px rgba(255,36,56,.45);transition:transform .2s,box-shadow .3s;overflow:hidden}
+.go::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%)}
+.go:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(255,36,56,.6)}
+.go:hover::after{transform:translateX(120%);transition:transform .8s}
+.go:active{transform:scale(.97)}
+.go:focus-visible,.ghost:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.go.load{pointer-events:none;opacity:.85}
+.ghost{font:600 16px var(--font);color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:18px 28px;cursor:pointer;transition:.2s}
+.ghost:hover{border-color:var(--red)}
+#res{max-width:1080px;margin:34px auto 0}
+.panel{border:1px solid var(--line);border-radius:28px;background:var(--card);padding:28px;animation:rise .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.stat span{font-size:12.5px;color:var(--mute)}
+.stat b{display:block;font-size:30px;font-weight:900;letter-spacing:-.03em;margin-top:4px}
+.stat.g b{color:var(--ok)}.stat.r b{color:var(--red)}
+.banner{display:flex;align-items:center;gap:22px;margin-top:22px;padding:26px;border-radius:22px}
+.banner.ok{background:linear-gradient(90deg,rgba(34,217,122,.16),rgba(34,217,122,.04));border:1px solid rgba(34,217,122,.45)}
+.banner.bad{background:linear-gradient(90deg,rgba(255,36,56,.16),rgba(255,36,56,.04));border:1px solid rgba(255,36,56,.5)}
+.banner h3{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.banner p{color:var(--mute);margin-top:4px}
+.seal{width:76px;height:76px;flex:none}
+.seal circle{fill:none;stroke-width:4;stroke-dasharray:226;stroke-dashoffset:226;animation:draw .7s .1s forwards}
+.seal path{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .5s .65s forwards}
+.ok .seal{stroke:var(--ok);animation:pop .6s .9s}
+.bad .seal{stroke:var(--red);animation:shake .5s .8s}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{50%{transform:scale(1.15)}}
+@keyframes shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.lh{margin:26px 0 10px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:10px}
+.lh i{font-style:normal;font-size:12px;padding:3px 10px;border-radius:999px;background:rgba(255,36,56,.14);color:#ff7a86}
+.lh i.w{background:rgba(255,176,32,.14);color:var(--warn)}
+.it{display:flex;gap:14px;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--red);border-radius:14px;background:var(--card2);margin-bottom:9px;animation:slide .45s backwards}
+.it.w{border-left-color:var(--warn)}
+@keyframes slide{from{opacity:0;transform:translateX(-18px)}}
+.it .n{flex:none;font-weight:800;color:var(--red);min-width:58px}
+.it.w .n{color:var(--warn)}
+.it .t{font-family:var(--bn);font-size:15.5px;line-height:1.55;word-break:break-word}
+.it .h{display:block;font-size:12.5px;color:var(--mute);margin-top:5px;font-family:var(--font)}
+.note{margin-top:16px;color:var(--mute);font-size:13.5px}
+.err{max-width:1080px;margin:18px auto 0;text-align:center;color:#ff7a86;font-size:15px;min-height:22px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.banner{flex-direction:column;text-align:center}.tag{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span>Question Matcher</div>
+  <div class="tag"><i></i>Ready to match</div>
+</header>
+
+<section class="hero">
+  <p class="eyebrow">Automated Question Checking</p>
+  <h1>Sheet to <em>Dashboard</em></h1>
+  <p class="sub">Left box e <code>Google Sheet</code> er question paste koro, right box e <code>Teacher Dashboard</code> er question paste koro. Tarpor Match Questions e click koro. Format jemon e thak, tool nijei bujhe nibe.</p>
+</section>
+
+<section class="steps" aria-label="Steps">
+  <div class="step on" id="s1"><b>1</b><div>Paste<small>Duita box e question dao</small></div></div>
+  <div class="step" id="s2"><b>2</b><div>Match<small>Button e click koro</small></div></div>
+  <div class="step" id="s3"><b>3</b><div>Review<small>Result ar status dekho</small></div></div>
+</section>
+
+<main class="grid">
+  <div class="box">
+    <div class="bh">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></div>
+      <div><h2>Google Sheet</h2><p>Ek line e ekta question</p></div>
+      <span class="pill" id="c1">0</span>
+    </div>
+    <textarea id="a" spellcheck="false" placeholder="Sheet er question gulo ekhane paste koro..." aria-label="Google Sheet questions"></textarea>
+    <div class="bf"><span id="h1">Kono question paoa jayni</span><button class="lnk" data-clear="a">Clear</button></div>
+  </div>
+  <div class="box">
+    <div class="bh">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8M12 18v3"/></svg></div>
+      <div><h2>Teacher Dashboard</h2><p>"প্রশ্ন 1, প্রশ্ন 2..." shoho paste koro</p></div>
+      <span class="pill" id="c2">0</span>
+    </div>
+    <textarea id="b" spellcheck="false" placeholder="Dashboard er question gulo ekhane paste koro..." aria-label="Teacher dashboard questions"></textarea>
+    <div class="bf"><span id="h2">Kono question paoa jayni</span><button class="lnk" data-clear="b">Clear</button></div>
+  </div>
+</main>
+
+<div class="act">
+  <button class="go" id="go">Match Questions</button>
+  <button class="ghost" id="reset">Reset all</button>
+</div>
+<p class="err" id="err" role="alert"></p>
+<section id="res" aria-live="polite"></section>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Parsing ---------- */
+function parseSheet(t){
+  return t.split(/\r?\n/).map(l => l.trim())
+    .filter(Boolean)
+    .map(l => l.replace(/^(প্রশ্ন|question|q)\s*\d+\s*[.:)\-]?\s*/i, '').trim())
+    .filter(Boolean);
+}
+const HEAD = /^(প্রশ্ন|question|q)\s*[:.\-]?\s*[\d০-৯]+\s*[.:)]?$/i;
+function parseDash(t){
+  const lines = t.split(/\r?\n/).map(l => l.trim());
+  const out = []; let cur = null;
+  for (const l of lines){
+    if (HEAD.test(l)) { cur = []; out.push(cur); continue; }
+    if (l && cur) cur.push(l);
+  }
+  if (!out.length) return lines.filter(Boolean);          // header chhara paste korle
+  return out.filter(b => b.length).map(b => b.length >= 5 ? b.slice(0, -4).join(' ') : b[0]);
+}
+
+/* ---------- Normalizing (KaTeX / LaTeX / Unicode math) ---------- */
+function collapseDup(s){
+  // KaTeX copy e formula duibar ashe: "CH3ICH3I" -> "CH3I"
+  return s.replace(/[A-Za-z0-9=+\-−()\[\].,→^_πσ]{4,}/g, r => {
+    if (r.length % 2 || !/[A-Za-z]/.test(r)) return r;
+    const h = r.length / 2;
+    return r.slice(0, h).toLowerCase() === r.slice(h).toLowerCase() ? r.slice(0, h) : r;
+  });
+}
+function clean(s, dash){
+  s = s.normalize('NFKC').replace(/[⟶⟹⇒➔→]/g, '→').replace(/[−–—]/g, '-');
+  s = s.replace(/\[\[|\]\]|\$\$|\$/g, ' ')
+       .replace(/\\(text|mathrm|mathbf|left|right|,|;|!)/g, '')
+       .replace(/\\[a-zA-Z]+/g, '');
+  if (dash) s = collapseDup(s);
+  return s;
+}
+const key = s => s.toLowerCase().replace(/[^\p{L}\p{N}\p{M}]/gu, '');
+const nums = s => new Set(s.match(/\d+(\.\d+)?/g) || []);
+function grams(s){ const m = new Map(); for (let i = 0; i < s.length - 1; i++){ const g = s.substr(i, 2); m.set(g, (m.get(g) || 0) + 1); } return m; }
+function dice(a, b){
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+  const A = grams(a), B = grams(b); let hit = 0;
+  for (const [g, n] of A) hit += Math.min(n, B.get(g) || 0);
+  return 2 * hit / ((a.length - 1) + (b.length - 1));
+}
+const same = (x, y) => x.size === y.size && [...x].every(v => y.has(v));
+
+/* ---------- Matching ---------- */
+const THRESH = 0.88;
+function match(sheet, dash){
+  const S = sheet.map(q => { const c = clean(q, false); return {raw:q, k:key(c), n:nums(c)}; });
+  const D = dash.map(q => { const c = clean(q, true);  return {raw:q, k:key(c), n:nums(c)}; });
+  const pairs = [];
+  S.forEach((s, i) => D.forEach((d, j) => {
+    let sc = dice(s.k, d.k);
+    if (!same(s.n, d.n)) sc = Math.min(sc, 0.75);          // number alada hole match noy
+    pairs.push([sc, i, j]);
+  }));
+  pairs.sort((x, y) => y[0] - x[0]);
+  const sm = Array(S.length).fill(-1), dm = Array(D.length).fill(-1);
+  for (const [sc, i, j] of pairs) if (sc >= THRESH && sm[i] < 0 && dm[j] < 0){ sm[i] = j; dm[j] = i; }
+  const missing = [], extra = [];
+  S.forEach((s, i) => { if (sm[i] < 0){
+    let best = [0, -1]; D.forEach((d, j) => { if (dm[j] < 0){ const sc = pairs.find(p => p[1] === i && p[2] === j)[0]; if (sc > best[0]) best = [sc, j]; } });
+    missing.push({i, text:s.raw, close: best[0] >= 0.55 ? best : null});
+  }});
+  D.forEach((d, j) => { if (dm[j] < 0) extra.push({j, text:d.raw}); });
+  const moved = sm.filter((j, i) => j >= 0 && j !== i).length;
+  return {total:S.length, dtotal:D.length, ok:sm.filter(j => j >= 0).length, missing, extra, moved, dash:D};
+}
+
+/* ---------- UI ---------- */
+const A = $('#a'), B = $('#b');
+function live(){
+  const x = parseSheet(A.value), y = parseDash(B.value);
+  [['#c1', x.length, '#h1'], ['#c2', y.length, '#h2']].forEach(([c, n, h]) => {
+    const el = $(c); if (el.textContent != n){ el.textContent = n; el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 220); }
+    $(h).textContent = n ? n + 'ta question paoa gese' : 'Kono question paoa jayni';
+  });
+  $('#s1').classList.toggle('done', x.length > 0 && y.length > 0);
+}
+A.addEventListener('input', live); B.addEventListener('input', live);
+document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { $('#' + b.dataset.clear).value = ''; live(); });
+$('#reset').onclick = () => { A.value = B.value = ''; $('#res').innerHTML = ''; $('#err').textContent = ''; live(); ['s2','s3'].forEach(i => $('#' + i).classList.remove('on','done')); $('#s1').classList.remove('done'); $('#s1').classList.add('on'); };
+
+const CHECK = '<svg class="seal" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36"/><path d="M24 41l11 11 21-24"/></svg>';
+const CROSS = '<svg class="seal" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36"/><path d="M28 28l24 24M52 28L28 52"/></svg>';
+
+$('#go').onclick = () => {
+  const err = $('#err'); err.textContent = '';
+  const x = parseSheet(A.value), y = parseDash(B.value);
+  if (!x.length || !y.length){ err.textContent = 'Duita box e-i question paste koro, tarpor abar match koro.'; return; }
+  const btn = $('#go'); btn.classList.add('load'); btn.textContent = 'Matching...';
+  $('#s2').classList.add('on'); $('#s2').classList.remove('done');
+  setTimeout(() => {
+    const r = match(x, y);
+    btn.classList.remove('load'); btn.textContent = 'Match Questions';
+    ['s1','s2'].forEach(i => { $('#' + i).classList.add('done'); $('#' + i).classList.remove('on'); });
+    $('#s3').classList.add('on');
+    render(r);
+    $('#res').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 650);
+};
+
+function render(r){
+  const bad = r.missing.length + r.extra.length;
+  const all = !bad && r.total === r.dtotal;
+  let h = `<div class="panel"><div class="stats">
+    <div class="stat"><span>Sheet e question</span><b>${r.total}</b></div>
+    <div class="stat"><span>Dashboard e question</span><b>${r.dtotal}</b></div>
+    <div class="stat g"><span>Matched</span><b>${r.ok}</b></div>
+    <div class="stat ${bad ? 'r' : 'g'}"><span>Matched hoy nai</span><b>${r.missing.length}</b></div></div>`;
+  if (all){
+    h += `<div class="banner ok">${CHECK}<div><h3>All questions matched</h3><p>${r.ok}ta question e Sheet ar Dashboard hubohu mile geche.${r.moved ? ' Tobe ' + r.moved + 'ta question er serial alada.' : ''}</p></div></div>`;
+  } else {
+    h += `<div class="banner bad">${CROSS}<div><h3>${r.missing.length}ta question mile nai</h3><p>Niche list dekho. Dashboard e oi question gulo thik moto upload hoyeche kina check koro.</p></div></div>`;
+    if (r.missing.length){
+      h += `<div class="lh">Sheet e ache, Dashboard e nai <i>${r.missing.length}</i></div>`;
+      r.missing.forEach((m, k) => {
+        const hint = m.close ? `Kachakachi: Dashboard er ${m.close[1] + 1} number question (${Math.round(m.close[0] * 100)}% mil). Choto kono poriborton thakte pare.` : 'Dashboard e kachakachi kono question pawa jayni.';
+        h += `<div class="it" style="animation-delay:${k * 60}ms"><span class="n">Sheet ${m.i + 1}</span><span class="t">${esc(m.text)}<span class="h">${esc(hint)}</span></span></div>`;
+      });
+    }
+    if (r.extra.length){
+      h += `<div class="lh">Dashboard e ache, Sheet e nai <i class="w">${r.extra.length}</i></div>`;
+      r.extra.forEach((m, k) => {
+        h += `<div class="it w" style="animation-delay:${k * 60}ms"><span class="n">Dash ${m.j + 1}</span><span class="t">${esc(m.text)}</span></div>`;
+      });
+    }
+    if (r.moved) h += `<p class="note">${r.moved}ta matched question er serial Sheet ar Dashboard e alada.</p>`;
+  }
+  $('#res').innerHTML = h + '</div>';
+}
+</script>
+</body>
+</html>
