@@ -106,6 +106,10 @@ select.ghost{appearance:none;-webkit-appearance:none;text-align:center;cursor:po
 .dbg{margin-top:24px;color:var(--mute)}.dbg summary{cursor:pointer;font-weight:600;font-size:14px}
 .dl{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-family:var(--bn);font-size:14px;word-break:break-word}
 .dl b{min-width:70px;font-family:var(--font)}.dl.m b{color:var(--ok)}.dl.u b{color:var(--warn)}
+.it .t{flex:1;min-width:0}
+.cp{flex:none;align-self:flex-start;display:flex;align-items:center;gap:7px;font:600 13px var(--font);color:var(--mute);background:#232327;border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;transition:.2s}
+.cp:hover,.cp:focus-visible{color:#fff;border-color:var(--red);outline:none}
+.cp.done{color:var(--ok);border-color:var(--ok)}
 </style>
 </head>
 <body>
@@ -118,33 +122,33 @@ select.ghost{appearance:none;-webkit-appearance:none;text-align:center;cursor:po
 <section class="hero">
   <p class="eyebrow">Automated Question Checking</p>
   <h1>Sheet to <em>Dashboard</em></h1>
-  <p class="sub">Left box e <code>Google Sheet</code> er question paste koro, right box e <code>Teacher Dashboard</code> er question paste koro. Tarpor Match Questions e click koro. Format jemon e thak, tool nijei bujhe nibe.</p>
+  <p class="sub">Paste the <code>Google Sheet</code> questions in the left box and the <code>Teacher Dashboard</code> questions in the right box. Then click Match Questions. The tool figures out the format on its own.</p>
 </section>
 
 <section class="steps" aria-label="Steps">
-  <div class="step on" id="s1"><b>1</b><div>Paste<small>Duita box e question dao</small></div></div>
-  <div class="step" id="s2"><b>2</b><div>Match<small>Button e click koro</small></div></div>
-  <div class="step" id="s3"><b>3</b><div>Review<small>Result ar status dekho</small></div></div>
+  <div class="step on" id="s1"><b>1</b><div>Paste<small>Add questions in both boxes</small></div></div>
+  <div class="step" id="s2"><b>2</b><div>Match<small>Click the button</small></div></div>
+  <div class="step" id="s3"><b>3</b><div>Review<small>Check the result and status</small></div></div>
 </section>
 
 <main class="grid">
   <div class="box">
     <div class="bh">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></div>
-      <div><h2>Google Sheet</h2><p>Ek line e ekta question</p></div>
+      <div><h2>Google Sheet</h2><p>One question per line</p></div>
       <span class="pill" id="c1">0</span>
     </div>
-    <textarea id="a" spellcheck="false" placeholder="Sheet er question gulo ekhane paste koro..." aria-label="Google Sheet questions"></textarea>
-    <div class="bf"><span id="h1">Kono question paoa jayni</span><button class="lnk" data-clear="a">Clear</button></div>
+    <textarea id="a" spellcheck="false" placeholder="Paste the sheet questions here..." aria-label="Google Sheet questions"></textarea>
+    <div class="bf"><span id="h1">No questions detected</span><button class="lnk" data-clear="a">Clear</button></div>
   </div>
   <div class="box">
     <div class="bh">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8M12 18v3"/></svg></div>
-      <div><h2>Teacher Dashboard</h2><p>"প্রশ্ন 1, প্রশ্ন 2..." shoho paste koro</p></div>
+      <div><h2>Teacher Dashboard</h2><p>Paste with the "প্রশ্ন 1, প্রশ্ন 2..." headers</p></div>
       <span class="pill" id="c2">0</span>
     </div>
-    <textarea id="b" spellcheck="false" placeholder="Dashboard er question gulo ekhane paste koro..." aria-label="Teacher dashboard questions"></textarea>
-    <div class="bf"><span id="h2">Kono question paoa jayni</span><button class="lnk" data-clear="b">Clear</button></div>
+    <textarea id="b" spellcheck="false" placeholder="Paste the dashboard questions here..." aria-label="Teacher dashboard questions"></textarea>
+    <div class="bf"><span id="h2">No questions detected</span><button class="lnk" data-clear="b">Clear</button></div>
   </div>
 </main>
 
@@ -168,7 +172,7 @@ function parseSheet(t){
     .filter(Boolean);
 }
 const HEAD = /^(প্রশ্ন|question|q)\s*[:.\-]?\s*[\d০-৯]+\s*[.:)]?$/i;
-// Dashboard: protita "প্রশ্ন N" er niche jotogulo line, shob ekta block e rakhi (option koyta line e ashe seta guess kori na)
+// Dashboard: every line under a "প্রশ্ন N" header goes into one block (we do not guess how many option lines there are)
 function parseDash(t){
   const lines = t.split(/\r?\n/).map(l => l.trim());
   const out = []; let cur = null;
@@ -176,7 +180,7 @@ function parseDash(t){
     if (HEAD.test(l)) { cur = []; out.push(cur); continue; }
     if (l && cur) cur.push(l);
   }
-  if (!out.length) return lines.filter(Boolean).map(l => [l]);   // header chhara paste korle
+  if (!out.length) return lines.filter(Boolean).map(l => [l]);   // when pasted without headers
   return out.filter(b => b.length);
 }
 
@@ -184,7 +188,7 @@ function parseDash(t){
 const GREEK = {alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',eta:'η',theta:'θ',lambda:'λ',mu:'μ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',phi:'φ',omega:'ω',Delta:'Δ',Omega:'Ω',Sigma:'Σ',Theta:'Θ',Phi:'Φ',Pi:'Π'};
 const FUNC = /\\(sin|cos|tan|cot|sec|csc|sinh|cosh|tanh|arcsin|arccos|arctan|log|ln|lim|exp|min|max|det)\b/g;
 function collapseDup(s){
-  // KaTeX copy e formula duibar ashe: "CH3ICH3I" -> "CH3I"
+  // KaTeX copy repeats formulas twice: "CH3ICH3I" -> "CH3I"
   return s.replace(/[A-Za-z0-9=+\-()\[\].,→^_πσ]{4,}/g, r => {
     if (r.length % 2 || !/[A-Za-z]/.test(r)) return r;
     const h = r.length / 2;
@@ -209,15 +213,15 @@ const same = (x, y) => x.size === y.size && [...x].every(v => y.has(v));
 const prep = text => { const c = clean(text.text, text.dash), k = key(c); return {k, n:nums(c), g:grams(k)}; };
 
 /* ---------- Matching ---------- */
-// KaTeX paste e formula toto tukra tukra line e bhenge jay ("(" , "0" , "," ...). Tai line count er upor nirbhor kori na.
-// Dashboard er block ke ekta lomba akkhor-stream hishebe dhori ar tar shuru theke "question er soman" ongsho ta khuje bar kori.
+// KaTeX paste breaks formulas into many tiny lines ("(" , "0" , "," ...), so we do not depend on line counts.
+// Each dashboard block is treated as one long character stream, and we look for the part from its start that is equal to the sheet question.
 const prev = lines => lines.join(' ').replace(/\s+/g, ' ').slice(0, 150);
 function match(sheet, blocks, th){
   th = th || 0.9;
   const S = sheet.map(q => { const c = clean(q, false), k = key(c); return {raw:q, k, n:nums(c), g:grams(k)}; });
   const D = blocks.map(lines => {
     const kc = [], ct = []; let k = '', t = '';
-    lines.forEach(l => { const c = clean(l, false); k += key(c); t += c; kc.push(k); ct.push(t); });
+    lines.forEach(l => { const c = clean(l, false); k += key(c); t += c + ' '; kc.push(k); ct.push(t); });
     const cache = new Map();
     return {lines, kc, cand(i){ if (!cache.has(i)) cache.set(i, {k:kc[i], n:nums(ct[i]), g:grams(kc[i])}); return cache.get(i); }};
   });
@@ -227,8 +231,8 @@ function match(sheet, blocks, th){
     if (s.k.length < 2) return 0;
     let hit = 0; for (const [g, n] of s.g) hit += Math.min(n, c.g.get(g) || 0);
     const cov = hit / (s.k.length - 1), r = c.k.length / s.k.length;
-    let v = cov * (r > 2.6 ? 2.6 / r : 1);                 // KaTeX double text er jonno 2.6x porjonto ok
-    if (!same(s.n, c.n)) v = Math.min(v, 0.7);             // number alada hole match noy
+    let v = cov * (r > 2.6 ? 2.6 / r : 1);                 // up to 2.6x length is fine because of KaTeX double text
+    if (!same(s.n, c.n)) v = Math.min(v, 0.7);             // different numbers means not a match
     return v;
   };
   const M = S.map(s => D.map(d => {
@@ -252,7 +256,7 @@ function match(sheet, blocks, th){
     let best = [0, -1]; D.forEach((_, j) => { if (dm[j] < 0 && M[i][j] > best[0]) best = [M[i][j], j]; });
     missing.push({i, text:s.raw, close: best[0] >= 0.55 ? best : null});
   }});
-  D.forEach((d, j) => { if (dm[j] < 0) extra.push({j, text:prev(d.lines)}); });
+  D.forEach((d, j) => { if (dm[j] < 0) extra.push({j, text:prev(d.lines), full:d.lines.join(' ').replace(/\s+/g, ' ')}); });
   const moved = sm.filter((j, i) => j >= 0 && j !== i).length;
   return {total:S.length, dtotal:D.length, ok:sm.filter(j => j >= 0).length, missing, extra, moved,
           read:D.map((d, j) => ({j, text:prev(d.lines), ok:dm[j] >= 0}))};
@@ -264,7 +268,7 @@ function live(){
   const x = parseSheet(A.value), y = parseDash(B.value);
   [['#c1', x.length, '#h1'], ['#c2', y.length, '#h2']].forEach(([c, n, h]) => {
     const el = $(c); if (el.textContent != n){ el.textContent = n; el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 220); }
-    $(h).textContent = n ? n + 'ta question paoa gese' : 'Kono question paoa jayni';
+    $(h).textContent = n ? n + (n === 1 ? ' question' : ' questions') + ' detected' : 'No questions detected';
   });
   $('#s1').classList.toggle('done', x.length > 0 && y.length > 0);
 }
@@ -278,7 +282,7 @@ const CROSS = '<svg class="seal" viewBox="0 0 80 80"><circle cx="40" cy="40" r="
 $('#go').onclick = () => {
   const err = $('#err'); err.textContent = '';
   const x = parseSheet(A.value), y = parseDash(B.value);
-  if (!x.length || !y.length){ err.textContent = 'Duita box e-i question paste koro, tarpor abar match koro.'; return; }
+  if (!x.length || !y.length){ err.textContent = 'Please paste questions in both boxes, then click Match Questions again.'; return; }
   const btn = $('#go'); btn.classList.add('load'); btn.textContent = 'Matching...';
   $('#s2').classList.add('on'); $('#s2').classList.remove('done');
   setTimeout(() => {
@@ -291,34 +295,47 @@ $('#go').onclick = () => {
   }, 650);
 };
 
+const CP = [];
+const cpBtn = text => {
+  const i = CP.push(text) - 1;
+  return `<button class="cp" data-i="${i}" aria-label="Copy question"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Copy</span></button>`;
+};
+$('#res').addEventListener('click', e => {
+  const b = e.target.closest('.cp'); if (!b) return;
+  const t = CP[+b.dataset.i] || '';
+  const done = () => { const s = b.querySelector('span'); b.classList.add('done'); s.textContent = 'Copied'; setTimeout(() => { b.classList.remove('done'); s.textContent = 'Copy'; }, 1400); };
+  const fallback = () => { const a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (_) {} a.remove(); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+});
 function render(r){
+  CP.length = 0;
   const bad = r.missing.length + r.extra.length;
   const all = !bad && r.total === r.dtotal;
   let h = `<div class="panel"><div class="stats">
-    <div class="stat"><span>Sheet e question</span><b>${r.total}</b></div>
-    <div class="stat"><span>Dashboard e question</span><b>${r.dtotal}</b></div>
+    <div class="stat"><span>Questions in Sheet</span><b>${r.total}</b></div>
+    <div class="stat"><span>Questions in Dashboard</span><b>${r.dtotal}</b></div>
     <div class="stat g"><span>Matched</span><b>${r.ok}</b></div>
-    <div class="stat ${bad ? 'r' : 'g'}"><span>Matched hoy nai</span><b>${r.missing.length}</b></div></div>`;
+    <div class="stat ${bad ? 'r' : 'g'}"><span>Not matched</span><b>${r.missing.length}</b></div></div>`;
   if (all){
-    h += `<div class="banner ok">${CHECK}<div><h3>All questions matched</h3><p>${r.ok}ta question e Sheet ar Dashboard hubohu mile geche.${r.moved ? ' Tobe ' + r.moved + 'ta question er serial alada.' : ''}</p></div></div>`;
+    h += `<div class="banner ok">${CHECK}<div><h3>All questions matched</h3><p>${r.ok} ${r.ok === 1 ? 'question matches' : 'questions match'} exactly between the Sheet and the Dashboard.${r.moved ? ' The order is different for ' + r.moved + ' ' + (r.moved === 1 ? 'question' : 'questions') + '.' : ''}</p></div></div>`;
   } else {
-    h += `<div class="banner bad">${CROSS}<div><h3>${r.missing.length}ta question mile nai</h3><p>Niche list dekho. Dashboard e oi question gulo thik moto upload hoyeche kina check koro.</p></div></div>`;
+    h += `<div class="banner bad">${CROSS}<div><h3>${r.missing.length} ${r.missing.length === 1 ? 'question' : 'questions'} not matched</h3><p>See the list below and check whether these questions were uploaded to the dashboard correctly.</p></div></div>`;
     if (r.missing.length){
-      h += `<div class="lh">Sheet e ache, Dashboard e nai <i>${r.missing.length}</i></div>`;
+      h += `<div class="lh">In Sheet, missing in Dashboard <i>${r.missing.length}</i></div>`;
       r.missing.forEach((m, k) => {
-        const hint = m.close ? `Kachakachi: Dashboard er ${m.close[1] + 1} number question (${Math.round(m.close[0] * 100)}% mil). Choto kono poriborton thakte pare.` : 'Dashboard e kachakachi kono question pawa jayni.';
-        h += `<div class="it" style="animation-delay:${k * 60}ms"><span class="n">Sheet ${m.i + 1}</span><span class="t">${esc(m.text)}<span class="h">${esc(hint)}</span></span></div>`;
+        const hint = m.close ? `Closest match: Dashboard question ${m.close[1] + 1} (${Math.round(m.close[0] * 100)}% match). There may be a small difference.` : 'No close question found in the Dashboard.';
+        h += `<div class="it" style="animation-delay:${k * 60}ms"><span class="n">Sheet ${m.i + 1}</span><span class="t">${esc(m.text)}<span class="h">${esc(hint)}</span></span>${cpBtn(m.text)}</div>`;
       });
     }
     if (r.extra.length){
-      h += `<div class="lh">Dashboard e ache, Sheet e nai <i class="w">${r.extra.length}</i></div>`;
+      h += `<div class="lh">In Dashboard, missing in Sheet <i class="w">${r.extra.length}</i></div>`;
       r.extra.forEach((m, k) => {
-        h += `<div class="it w" style="animation-delay:${k * 60}ms"><span class="n">Dash ${m.j + 1}</span><span class="t">${esc(m.text)}</span></div>`;
+        h += `<div class="it w" style="animation-delay:${k * 60}ms"><span class="n">Dash ${m.j + 1}</span><span class="t">${esc(m.text)}</span>${cpBtn(m.full)}</div>`;
       });
     }
-    if (r.moved) h += `<p class="note">${r.moved}ta matched question er serial Sheet ar Dashboard e alada.</p>`;
+    if (r.moved) h += `<p class="note">${r.moved} matched ${r.moved === 1 ? 'question is' : 'questions are'} in a different order in the Sheet and the Dashboard.</p>`;
   }
-  h += `<details class="dbg"><summary>Tool dashboard er question gulo kivabe porechhe</summary>` +
+  h += `<details class="dbg"><summary>How the tool read the dashboard questions</summary>` +
     r.read.map(d => `<div class="dl ${d.ok ? 'm' : 'u'}"><b>Dash ${d.j + 1}</b><span>${esc(d.text)}</span></div>`).join('') + '</details>';
   $('#res').innerHTML = h + '</div>';
 }
